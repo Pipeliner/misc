@@ -3,6 +3,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <stdint.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
 
 int print_file_info(const char *path, const struct stat *st)
 {
@@ -58,7 +61,30 @@ int print_file_info(const char *path, const struct stat *st)
     PUT_RW_BIT(S_IWOTH, 'w');
     PUT_X_BIT(S_IXOTH, S_ISVTX, 'x', 'T');
 
-    putchar(' ');
+    putchar('\t');
+
+    printf("%d\t", st->st_nlink);
+
+    uid_t uid = st->st_uid;
+    struct passwd *pw = getpwuid(uid);
+    fputs(pw->pw_name, stdout);
+
+    putchar('\t');
+
+    gid_t  gid = st->st_gid;
+    struct group *gr = getgrgid(gid);
+    fputs(gr->gr_name, stdout);
+
+    putchar('\t');
+
+    printf("%d\t", st->st_size);
+
+    struct tm *mtime = localtime(&st->st_mtime);
+    const int MTIME_STRING_LENGTH=200;
+    char mtime_string[MTIME_STRING_LENGTH];
+
+    strftime(mtime_string, MTIME_STRING_LENGTH, "%b %e  %Y\t", mtime);
+    fputs(mtime_string, stdout);
 
     puts(path);
 }
