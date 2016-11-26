@@ -2,14 +2,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <stdint.h>
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
 
 int print_file_info(const char *path, const struct stat *st)
 {
-    //printf("%s %ju\n", path, (uintmax_t) st->st_uid);
     mode_t mode = st->st_mode;
     mode_t file_type = mode & S_IFMT;
 
@@ -63,7 +61,7 @@ int print_file_info(const char *path, const struct stat *st)
 
     putchar('\t');
 
-    printf("%d\t", st->st_nlink);
+    printf("%lu\t", (unsigned long)st->st_nlink);
 
     uid_t uid = st->st_uid;
     struct passwd *pw = getpwuid(uid);
@@ -77,7 +75,7 @@ int print_file_info(const char *path, const struct stat *st)
 
     putchar('\t');
 
-    printf("%d\t", st->st_size);
+    printf("%4lu\t", (unsigned long)st->st_size);
 
     struct tm *mtime = localtime(&st->st_mtime);
     const int MTIME_STRING_LENGTH=200;
