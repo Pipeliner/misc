@@ -5,6 +5,8 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 int print_file_info(const char *path, const struct stat *st)
 {
@@ -49,7 +51,7 @@ int print_file_info(const char *path, const struct stat *st)
 
     PUT_RW_BIT(S_IRUSR, 'r');
     PUT_RW_BIT(S_IWUSR, 'w');
-    PUT_X_BIT(S_IXUSR, S_ISUID, 'x', 'S');
+    PUT_X_BIT(S_IXUSR, S_ISUID, 'x', 's');
 
     PUT_RW_BIT(S_IRGRP, 'r');
     PUT_RW_BIT(S_IWGRP, 'w');
@@ -93,6 +95,7 @@ int list_directory(const char *directory_name) {
     struct stat st;
 
     dp = opendir(directory_name);
+    chdir(directory_name);
     if (dp != NULL)
     {
         while (ep = readdir(dp))
@@ -100,7 +103,8 @@ int list_directory(const char *directory_name) {
 
             if (stat(ep->d_name, &st))
             {
-                perror("stat error!");
+                perror(ep->d_name);
+                perror("stat error");
             }
             print_file_info(ep->d_name, &st);
         }
@@ -108,13 +112,51 @@ int list_directory(const char *directory_name) {
         closedir(dp);
     }
     else
-        perror ("Couldn't open the directory");
+    {
+        perror(directory_name);
+        perror("Couldn't open the directory");
+    }
 
     return 0;
 }
 
-int main (void)
+int main(int argc, char **argv)
 {
-    list_directory(".");
+    if (argc == 1)
+        list_directory(".");
+
+    else
+    {
+        char *original_path = getcwd(NULL, 0);
+
+        int i;
+        for (i = 1; i < argc; i++)
+        {
+            char *path = argv[i];
+            struct stat st;
+
+            if (stat(path, &st))
+            {
+                perror(path);
+                perror("stat error");
+                continue;
+            }
+
+            if (S_ISDIR(st.st_mode))
+            {
+                printf("\n%s:\n", path);
+                list_directory(path);
+            }
+            else
+            {
+                print_file_info(path, &st);
+            }
+
+            chdir(original_path);
+
+        }
+
+        free(original_path);
+    }
 
 }
