@@ -1,0 +1,6 @@
+.idea
+*.o
+*.so
+.virtualenv
+.ipynb_checkpoints
+__pycache__
