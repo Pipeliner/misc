@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.17.1/matter.min.js"></script>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="myCanvas"></div>
+    <script>
+      const {
+        Engine,
+        Render,
+        Runner,
+        Composites,
+        Composite,
+        Constraint,
+        MouseConstraint,
+        Mouse,
+        Bodies,
+      } = Matter;
+
+      // create an engine
+      const engine = Engine.create();
+
+      // disable gravity
+      engine.world.gravity.y = 0;
+
+      // create a renderer
+      const render = Render.create({
+        element: document.getElementById("myCanvas"),
+        engine: engine,
+        options: {
+          width: 800,
+          height: 600,
+          wireframes: false,
+        },
+      });
+
+      // run the renderer
+      Render.run(render);
+
+      // create runner
+      const runner = Runner.create();
+      Runner.run(runner, engine);
+
+      // create nodes
+      const nodes = Composites.stack(100, 100, 4, 5, 20, 20, (x, y) => {
+        return Bodies.circle(x, y, 15, {
+          inertia: Infinity,
+          collisionFilter: { group: -1 },
+        });
+      });
+
+      // create edges
+      //   const edges = Composites.chain(nodes, 0.5, 0, -0.5, 0, {
+      //     stiffness: 1,
+      //     length: 0,
+      //     render: { type: "line" },
+      //   });
+      // create edges
+      let edges = [];
+      for (let i = 0; i < nodes.bodies.length - 1; i++) {
+        let nodeA = nodes.bodies[i];
+        let nodeB = nodes.bodies[i + 1];
+        let distance = Math.sqrt(
+          Math.pow(nodeB.position.x - nodeA.position.x, 2) +
+            Math.pow(nodeB.position.y - nodeA.position.y, 2)
+        );
+        let edge = Constraint.create({
+          bodyA: nodeA,
+          pointA: { x: 0, y: 0 }, // Center of the first body
+          bodyB: nodeB,
+          pointB: { x: 0, y: 0 }, // Center of the second body
+          stiffness: 1,
+          length: distance, // The distance between each node
+          render: { visible: true, type: "line" },
+        });
+        edges.push(edge);
+      }
+
+      // add all of the bodies and constraints to the world
+      Composite.add(engine.world, [nodes, ...edges]);
+
+      // add mouse control
+      const mouse = Mouse.create(render.canvas);
+      const mouseConstraint = MouseConstraint.create(engine, {
+        mouse: mouse,
+        constraint: {
+          stiffness: 0.2,
+          render: { visible: false },
+        },
+      });
+      Composite.add(engine.world, mouseConstraint);
+
+      // keep the mouse in sync with rendering
+      render.mouse = mouse;
+
+      // fit the render viewport to the scene
+      Render.lookAt(render, {
+        min: { x: 0, y: 0 },
+        max: { x: 800, y: 600 },
+      });
+    </script>
+  </body>
+</html>
